@@ -1,4 +1,3 @@
-CREATE TABLE CarVotes (
     carvote_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     carname VARCHAR(255),
     votes INT

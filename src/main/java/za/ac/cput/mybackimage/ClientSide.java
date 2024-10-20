@@ -24,10 +24,11 @@ public class ClientSide {
         } catch (IOException ioe) {
             System.out.println("IOException: " + ioe.getMessage());
         }
+        
+//        getStreams();
     }
 
     public void getStreams() {
-        ObjectInputStream in = null;
         try {
             //construct stream objects for data transfer
             out = new ObjectOutputStream(clientSocket.getOutputStream());
@@ -38,7 +39,32 @@ public class ClientSide {
         }
     }
 
-    public void communicate() {
+    public void communicate(String newCarName) {
+        try {
+            // Send the new car name to the server
+            out.writeObject(newCarName);
+            out.flush();
+
+            // Wait for the server's response
+            String serverResponse = (String) in.readObject();
+
+            // Check if the insertion was successful
+            if (serverResponse.equals("Success")) {
+                // Notify the user
+                System.out.println("Car added successfully!");
+            } else {
+                System.out.println("Error: " + serverResponse);
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Communication Error: " + e.getMessage());
+        }
+    }
+    
+    public void closeConnection() throws IOException{
+        if (out != null) out.close();
+        if (in != null) in.close();
+        if (clientSocket != null) clientSocket.close();
         
     }
+
 }

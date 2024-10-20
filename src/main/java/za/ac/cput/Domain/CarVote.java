@@ -1,16 +1,18 @@
 
 package za.ac.cput.Domain;
+
+import java.io.Serializable;
+
 /**
  *
  * @author Esihle
  */
-public class CarVote {
+public class CarVote implements Serializable {
     
     private String carName;
     private int Vote;
 
     public CarVote(String carName, int Vote) {
-   
         this.carName = carName;
         this.Vote = Vote;
     }

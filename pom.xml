@@ -11,4 +11,14 @@
         <maven.compiler.target>22</maven.compiler.target>
         <exec.mainClass>za.ac.cput.mybackimage.MyBackImage</exec.mainClass>
     </properties>
+    
+    <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.apache.derby/derbyclient -->
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derbyclient</artifactId>
+            <version>10.14.2.0</version>
+        </dependency>
+
+    </dependencies>
 </project>

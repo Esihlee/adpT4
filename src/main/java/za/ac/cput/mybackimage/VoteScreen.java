@@ -2,9 +2,12 @@ package za.ac.cput.mybackimage;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.table.*;
 import za.ac.cput.Server.CarDAO;
 import za.ac.cput.Domain.CarVote;
@@ -28,7 +31,7 @@ public class VoteScreen extends JFrame {
     private JLabel lblCars = new JLabel("Luxury Cars");
     private JLabel lblAdd = new JLabel("Add A Car");
     private JTextField txtAdd = new JTextField();
-    private String strCars[] = {"Select:", "Rolls Royce Ghost", "BMW i7 xDrive60", "Mercedis AMG G63S", "Bentley Continental GT", "Audi Q8"};
+    private String strCars[] = {"Select:"};
     private JComboBox cbCars = new JComboBox(strCars);
     private DefaultTableModel tblModel = new DefaultTableModel();
     private JTable tblCar = new JTable(tblModel);
@@ -64,7 +67,6 @@ public class VoteScreen extends JFrame {
         cbCars.setBounds(360, 230, 150, 35);
 
         pnlTable.setBounds(300, 300, 500, 250);
-        tblModel.addColumn("ID");
         tblModel.addColumn("Car Name");
         tblModel.addColumn("Vote");
 
@@ -74,29 +76,21 @@ public class VoteScreen extends JFrame {
 
         btnAdd.setBounds(320, 600, 100, 30);
         btnAdd.setBackground(Color.BLACK);
-//        btnAdd.setOpaque(true);
-//        btnAdd.setBorderPainted(false);
         btnAdd.setForeground(Color.WHITE);
         btnAdd.setFont(new Font("Serif", Font.BOLD, 25));
 
         btnVote.setBounds(440, 600, 100, 30);
         btnVote.setBackground(Color.BLACK);
-//        btnVote.setOpaque(true);
-//        btnVote.setBorderPainted(false);
         btnVote.setForeground(Color.WHITE);
         btnVote.setFont(new Font("Serif", Font.BOLD, 25));
 
         btnView.setBounds(560, 600, 100, 30);
         btnView.setBackground(Color.BLACK);
-//        btnView.setOpaque(true);
-//        btnView.setBorderPainted(false);
         btnView.setForeground(Color.WHITE);
         btnView.setFont(new Font("Serif", Font.BOLD, 25));
 
         btnExit.setBounds(680, 600, 100, 30);
         btnExit.setBackground(Color.BLACK);
-//        btnExit.setOpaque(true);
-//        btnExit.setBorderPainted(false);
         btnExit.setForeground(Color.WHITE);
         btnExit.setFont(new Font("Serif", Font.BOLD, 25));
 
@@ -119,32 +113,43 @@ public class VoteScreen extends JFrame {
                 String newCarName = txtAdd.getText();
                 if (!newCarName.isEmpty()) {
                     try {
-                        // 1. Update the strCars array
+                        cs.communicate(newCarName);
+
                         String[] newStrCars = new String[strCars.length + 1];
                         System.arraycopy(strCars, 0, newStrCars, 0, strCars.length);
                         newStrCars[newStrCars.length - 1] = newCarName;
                         strCars = newStrCars;
 
-                        // 2. Refresh the JComboBox
                         cbCars.setModel(new DefaultComboBoxModel<>(strCars));
-
-                        // Clear the text field
                         txtAdd.setText("");
 
-                        //Send to the server
-                        ClientSide.out.writeObject(newCarName);
-                        ClientSide.out.flush();
-                    } catch (IOException ex) {
-                        System.out.println("Error sending vote to server: " + ex.getMessage());
+                    } catch (Exception ex) {
+                        System.out.println("Error: " + ex.getMessage());
                     }
                 }
             }
         });
 
-        btnExit.addActionListener(new ActionListener() {
+        btnView.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.exit(0);
+                try {
+                    ClientSide.out.writeObject("view");
+                    ClientSide.out.flush();
+
+                    Object response = cs.in.readObject();
+                    if (response instanceof List) {
+                        List<CarVote> cars = (List<CarVote>) response;
+                        tblModel.setRowCount(0);
+                        for (CarVote car : cars) {
+                            tblModel.addRow(new Object[]{car.getCarName(), car.getVote()});
+                        }
+                    }
+                } catch (IOException ex) {
+                    System.out.println("Error requesting data: " + ex.getMessage());
+                } catch (ClassNotFoundException ex) {
+                    Logger.getLogger(VoteScreen.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
 
@@ -152,15 +157,31 @@ public class VoteScreen extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String selectedCar = (String) cbCars.getSelectedItem();
-                if (!selectedCar.equals("Select:")) {
-                    // 2. Send vote to server
+                if (selectedCar != null && !selectedCar.equals("Select:")) {
                     try {
                         CarVote vote = new CarVote(selectedCar, 1); // Sending 1 vote
                         ClientSide.out.writeObject(vote);
                         ClientSide.out.flush();
+
+                        JOptionPane.showMessageDialog(null, "Vote cast successfully for: " + selectedCar);
                     } catch (IOException ex) {
                         System.out.println("Error sending vote to server: " + ex.getMessage());
+                        JOptionPane.showMessageDialog(null, "Error sending vote. Please try again.");
                     }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Please select a car to vote for.");
+                }
+            }
+        });
+        
+         btnExit.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+                try {
+                    cs.closeConnection();
+                } catch (IOException ex) {
+                    Logger.getLogger(VoteScreen.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
